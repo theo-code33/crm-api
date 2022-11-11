@@ -3,65 +3,99 @@ const express = require("express")
 const app = express()
 const mongoose = require('mongoose')
 const models = require('./models')
-const Customer = models.customer
-const Invoice = models.invoice
+const Customer = models.Customer
+const Invoice = models.Invoice
 const port = process.env.PORT || 8080
 
 app.use(express.json())
 
 mongoose.connect(`mongodb://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_URI}`)
+const db = mongoose.connection
+db.once('open', () => console.log('MongoDB running'))
+db.on('error', (err) => console.error(err))
 
 app.get("/", (req, res) => {
     res.send('Api work')
 })
 
 app.get('/customers', (req, res) => {
-    customer.find({}, (err, customers) => {
-        if(err) throw err
-        res.send(customers)
-    })
+    Customer.find({})
+        .populate("invoices")
+        .exec((err, customers) => {
+            if(err) throw err
+            res.send(customers)
+        })
 })
 app.get('/customer/:id', (req, res) => {
     const { id } = req.params
-    customer.findById(id, (err, customer) => {
+    Customer.findById(id, (err, customer) => {
         if(err) throw err
+        if(!customer) return res.status(404).send('Customer not found')
         res.send(customer)
     })
 })
 
 app.post('/customer', (req, res) => {
-    const newCustomer = new customer(req.body)
+    const newCustomer = new Customer(req.body)
     newCustomer.save()
-        .then((dataDb) => {
-            res.send(dataDb)
-        })
+        .then((dataDb) => res.send(dataDb))
+        .catch((err) => res.status(500).send(err))
 })
 app.put('/customer/:id', (req, res) => {
     const { id } = req.params
-    res.send(`Update route to update customer with id => ${id}`)
+    Customer.findByIdAndUpdate( id, req.body, (err, customer) => {
+        if(err) throw err
+        if(!customer) return res.status(404).send('Customer not found')
+        res.send(customer)
+    })
 })
 app.delete('/customer/:id', (req, res) => {
     const { id } = req.params
-    res.send(`Delete route to delete customer with id => ${id}`)
+    Customer.findByIdAndDelete(id , (err, customer) => {
+        if(err) throw err
+        if(!customer) return res.status(404).send('Customer not found')
+        res.send("Customer deleted => " + customer)
+    })
 })
 app.get('/invoices', (req, res) => {
-    res.send('invoices route')
+    Invoice.find({})
+        .populate("customer")
+        .exec((err, invoices) => {
+            if(err) throw err
+            res.send(invoices)
+        })
 })
 app.get('/invoice/:id', (req, res) => {
     const { id } = req.params
-    res.send(`invoice with id => ${id} `)
+    Invoice.findById(id)
+        .populate("customer")
+        .exec((err, invoice) => {
+            if(err) throw err
+            if(!invoice) return res.status(404).send("Invoice not found")
+            res.send(invoice)
+        })
 })
-
 app.post('/invoice', (req, res) => {
-    res.send("post invoice route")
+    const newInvoice = new Invoice(req.body)
+    newInvoice.save()
+        .then(invoice => res.send(invoice))
+        .catch(err => res.status(500).send(err))
 })
 app.put('/invoice/:id', (req, res) => {
     const { id } = req.params
-    res.send(`Update route to update invoice with id => ${id}`)
+    Invoice.findByIdAndUpdate(id, req.body, (err, invoice) => {
+        if(err) throw err
+        if(!invoice) return res.status(404).send("Invoice not found")
+        res.send(invoice)
+    })
 })
 app.delete('/invoice/:id', (req, res) => {
     const { id } = req.params
-    res.send(`Delete route to delete invoice with id => ${id}`)
+    Invoice.findByIdAndDelete(id, (err, invoice) => {
+        if(err) throw err
+        if(!invoice) return res.status(404).send('Invoice not found')
+        res.send("Invoice deleted => " + invoice)
+    })
 })
 
 app.listen(port, () => {

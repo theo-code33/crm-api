@@ -1,13 +1,19 @@
+// INIT CONSTANT
+
 require('dotenv').config()
 const express = require("express")
 const app = express()
 const mongoose = require('mongoose')
+const morgan = require('morgan')
 const models = require('./models')
 const Customer = models.Customer
 const Invoice = models.Invoice
 const port = process.env.PORT || 8080
 
+// MIDDELWARE
+
 app.use(express.json())
+app.use(morgan("dev"))
 
 mongoose.connect(`mongodb://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_URI}`)
 const db = mongoose.connection
@@ -17,6 +23,8 @@ db.on('error', (err) => console.error(err))
 app.get("/", (req, res) => {
     res.send('Api work')
 })
+
+// ROUTES CUSTOMERS
 
 app.get('/customers', (req, res) => {
     Customer.find({})
@@ -57,6 +65,9 @@ app.delete('/customer/:id', (req, res) => {
         res.send("Customer deleted => " + customer)
     })
 })
+
+// ROUTES INVOICES
+
 app.get('/invoices', (req, res) => {
     Invoice.find({})
         .populate("customer")
@@ -82,7 +93,7 @@ app.post('/invoice', (req, res) => {
         new Invoice(req.body)
             .save()
             .then(invoice => {
-                customer.update(
+                customer.updateOne(
                     {
                         $push: {"invoices": invoice._id }
                     },
@@ -111,6 +122,8 @@ app.delete('/invoice/:id', (req, res) => {
         res.send("Invoice deleted => " + invoice)
     })
 })
+
+// LISTEN API
 
 app.listen(port, () => {
     console.log(`App listen on port ${port} ! URL => http://localhost:${port}`);

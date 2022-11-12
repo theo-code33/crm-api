@@ -76,10 +76,24 @@ app.get('/invoice/:id', (req, res) => {
         })
 })
 app.post('/invoice', (req, res) => {
-    const newInvoice = new Invoice(req.body)
-    newInvoice.save()
-        .then(invoice => res.send(invoice))
-        .catch(err => res.status(500).send(err))
+    Customer.findById(req.body.customer, (err, customer) => {
+        if(err) throw err
+        if(!customer) return res.status(404).send("Customer not found")
+        new Invoice(req.body)
+            .save()
+            .then(invoice => {
+                customer.update(
+                    {
+                        $push: {"invoices": invoice._id }
+                    },
+                    (err, customer) => {
+                        if(err) throw err
+                        res.send(invoice)
+                    }
+                )
+            })
+            .catch(err => res.status(500).send(err))
+    })
 })
 app.put('/invoice/:id', (req, res) => {
     const { id } = req.params

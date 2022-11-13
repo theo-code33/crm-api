@@ -62,7 +62,12 @@ app.delete('/customer/:id', (req, res) => {
     Customer.findByIdAndDelete(id , (err, customer) => {
         if(err) throw err
         if(!customer) return res.status(404).send('Customer not found')
-        res.send("Customer deleted => " + customer)
+        customer.invoices.map(invoice => {
+            Invoice.findByIdAndDelete(invoice._id, (err, invoice) => {
+                if(err) throw err
+                res.send("Customer deleted => " + customer)
+            })
+        })
     })
 })
 
@@ -108,18 +113,47 @@ app.post('/invoice', (req, res) => {
 })
 app.put('/invoice/:id', (req, res) => {
     const { id } = req.params
-    Invoice.findByIdAndUpdate(id, req.body, (err, invoice) => {
-        if(err) throw err
-        if(!invoice) return res.status(404).send("Invoice not found")
-        res.send(invoice)
-    })
+    if(req.body.customer){
+        Customer.findById(req.body.customer, (err, customer) => {
+            if(err) throw err
+            if(!customer) return res.status(404).send('Customer not found')
+            Invoice.findById(id)
+                .then(invoice => {
+                    const lastCustomer = invoice.customer
+                    invoice.updateOne(req.body, (err, invoiceUpdate) => {
+                        if(err) throw err
+                        customer.updateOne({
+                            $push: {"invoices": invoice._id}
+                        }, (err, newCustomer) => {
+                            if(err) throw err
+                            Customer.findByIdAndUpdate(lastCustomer, {
+                                $pull: {"invoices": invoice._id}
+                            }, (err, customer) => {
+                                if(err) throw err
+                                res.send(invoiceUpdate)
+                            })
+                        })
+                    })
+                })
+                .catch(err => res.status(500).send(err))
+        })
+    }else{
+        Invoice.findByIdAndUpdate(id, req.body, (err, invoice) => {
+            if(err) throw err
+            if(!invoice) return res.status(404).send("Invoice not found")
+            res.send(invoice)
+        })
+    }
 })
 app.delete('/invoice/:id', (req, res) => {
     const { id } = req.params
     Invoice.findByIdAndDelete(id, (err, invoice) => {
         if(err) throw err
         if(!invoice) return res.status(404).send('Invoice not found')
-        res.send("Invoice deleted => " + invoice)
+        Customer.findByIdAndUpdate(invoice.customer, {$pull: {"invoices": invoice._id}}, (err, customer) => {
+            if(err) throw err
+            res.send("Invoice deleted => " + invoice)
+        })
     })
 })
 

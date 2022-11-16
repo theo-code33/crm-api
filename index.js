@@ -4,6 +4,7 @@ const app = express()
 const morgan = require('morgan')
 const customerRouter = require('./src/routers/customer.router')
 const invoiceRouter = require('./src/routers/invoice.router')
+const usersRouter = require("./src/routers/users.router")
 const connect = require('./config/mongoose.config')
 
 const port = process.env.PORT || 8080
@@ -14,6 +15,7 @@ app.use(express.json())
 app.use(morgan("dev"))
 app.use("/api", customerRouter)
 app.use("/api", invoiceRouter)
+app.use("/api", usersRouter)
 
 connect()
 

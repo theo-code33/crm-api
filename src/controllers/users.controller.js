@@ -1,9 +1,14 @@
 const models = require('../models')
 const Users = models.Users
+const bcrypt = require("bcrypt")
 
 const userController = {
     create: async (req, res) => {
         const newUser = new Users(req.body)
+
+        // const salt = await bcrypt.hash(newUser.password, 10)
+        // newUser.password = salt
+
         try{
             await newUser.save()
             res.status(201).send(newUser)

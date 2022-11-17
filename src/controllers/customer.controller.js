@@ -32,6 +32,7 @@ const customerController = {
     getAll: async (req, res) => {
         Customer.find({})
         .populate("invoices")
+        .populate("user")
         .exec((err, customers) => {
             if(err) throw err
             res.send(customers)

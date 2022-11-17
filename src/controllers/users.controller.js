@@ -4,9 +4,14 @@ const Users = models.Users
 const userController = {
     create: async (req, res) => {
         const newUser = new Users(req.body)
-        newUser.save()
-            .then((dataDb => res.send(dataDb)))
-            .catch(err => res.status(500).send(err))
+        try{
+            await newUser.save()
+            res.status(201).send(newUser)
+        }catch(err){
+            res.status(400).send({
+                error: err.message
+            })
+        }
     },
     update: async (req, res) => {
         const { id } = req.params

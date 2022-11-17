@@ -7,7 +7,10 @@ const Invoice = mongoose.model("invoices",
             ref: "customers"
         },
         sendingAt: Date,
-        status: String,
+        status: {
+            type: String,
+            enum: [send, pending, paid]
+        },
         amount: Number
     })
 )

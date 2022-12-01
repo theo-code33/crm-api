@@ -1,13 +1,9 @@
 const models = require('../models')
 const Users = models.Users
-const bcrypt = require("bcrypt")
 
 const userController = {
     create: async (req, res) => {
         const newUser = new Users(req.body)
-
-        // const salt = await bcrypt.hash(newUser.password, 10)
-        // newUser.password = salt
 
         try{
             await newUser.save()
@@ -50,6 +46,13 @@ const userController = {
                 if(!user) res.status(404).send('User not Found')
                 res.send(user)
             })
+    },
+    getAllCustomers: async (req, res) => {
+        const { id } = req.params
+        const user = await Users.findById(id).populate('customers')
+        if(!user) return res.status(404).send('User not found')
+        
+       res.send(user.customers)
     }
 }
 

@@ -1,3 +1,4 @@
+const { default: mongoose } = require('mongoose')
 const models = require('../models')
 const Customer = models.Customer
 const Invoice = models.Invoice
@@ -85,6 +86,27 @@ const invoiceController = {
                 if(!invoice) return res.status(404).send("Invoice not found")
                 res.send(invoice)
             })
+    },
+    getAllInvoicesByCustomer: async (req, res) => {
+        const { id } = req.params
+        
+        const customer = await Customer.findById(id)
+
+        if(!customer) return res.status(404).send("Customer not found")
+
+        const invoices = await Invoice.find({customer: id})
+        if(invoices.length === 0) return res.status(404).send("Customer doesn't have invoices")
+        res.send(invoices)
+        
+    },
+    getAllCustomers: async (req, res) => {
+        const { id } = req.params
+        const user = await Users.findById(id)
+        if(!user) return res.status(404).send('User not found')
+        
+        const customers = await Customer.find({user: id})
+        if(customers.length === 0) return res.status(404).send('User doesn\'t have customer ')
+        res.send(customers)
     }
 }
 
